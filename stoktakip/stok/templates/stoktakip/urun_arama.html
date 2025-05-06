@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ürün Stok Takip Sistemi</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'stoktakip/css/style.css' %}">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container navbar-container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-box-open me-2"></i>Stok Takip Sistemi
+            </a>
+            <button class="navbar-toggler" type="button" id="navbarToggler">
+                <i class="fas fa-bars"></i>
+            </button>
+            <ul class="navbar-nav" id="navbarNav">
+                <li class="nav-item">
+                    <a class="nav-link active" href="?"><i class="fas fa-home me-1"></i>Anasayfa</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="content">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-10 search-container">
+                    <h2 class="search-title">Ürün Stok Sorgulama</h2>
+                    
+                    <!-- Filtreler -->
+                    <form method="get" class="search-form">
+                        <div class="filter-section">
+                            <h5><i class="fas fa-filter me-2"></i>Filtreler</h5>
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <label for="sehir" class="form-label">Şehir</label>
+                                    <select class="form-select" id="sehir" name="sehir">
+                                        <option value="">Tüm Şehirler</option>
+                                        {% for sehir in sehirler %}
+                                        <option value="{{ sehir.id }}" {% if secili_sehir_id == sehir.id|stringformat:"i" %}selected{% endif %}>{{ sehir.sehir_adi }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="ilce" class="form-label">İlçe</label>
+                                    <select class="form-select" id="ilce" name="ilce">
+                                        <option value="">Tüm İlçeler</option>
+                                        <!-- JavaScript ile doldurulacak -->
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="magaza" class="form-label">Şube</label>
+                                    <select class="form-select" id="magaza" name="magaza">
+                                        <option value="">Tüm Şubeler</option>
+                                        <!-- JavaScript ile doldurulacak -->
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="stok_durumu" class="form-label">Stok Durumu</label>
+                                    <select class="form-select" id="stok_durumu" name="stok_durumu">
+                                        <option value="">Hepsi</option>
+                                        <option value="var" {% if secili_stok_durumu == 'var' %}selected{% endif %}>Stokta Var</option>
+                                        <option value="az" {% if secili_stok_durumu == 'az' %}selected{% endif %}>Sınırlı Stok</option>
+                                        <option value="yok" {% if secili_stok_durumu == 'yok' %}selected{% endif %}>Stokta Yok</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-9">
+                                    <div class="input-group">
+                                        <input type="text" name="q" class="form-control" 
+                                            placeholder="Ürün adı veya barkod giriniz..." value="{{ query }}" 
+                                            aria-label="Ürün ara" aria-describedby="button-search">
+                                        <button class="btn btn-primary" type="submit" id="button-search">
+                                            <i class="fas fa-search"></i> Ara
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="button" class="btn btn-outline-secondary w-100" id="reset-filters">
+                                        <i class="fas fa-undo"></i> Filtreleri Sıfırla
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Sonuçlar -->
+                    {% if stoklar %}
+                    <div class="row">
+                        {% for stok in stoklar %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card result-card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ stok.urun.urun_adi }}</h5>
+                                    <h6 class="card-subtitle mb-2 text-muted">Barkod: {{ stok.urun.barkod }}</h6>
+                                    <p class="card-text">
+                                        <i class="fas fa-store"></i> {{ stok.magaza.magaza_adi }}<br>
+                                        <i class="fas fa-map-marker-alt"></i> {{ stok.magaza.sehir.sehir_adi }} - {{ stok.magaza.ilce.ilce_adi }}
+                                    </p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        {% if stok.adet > 10 %}
+                                        <span class="badge bg-success stock-badge">{{ stok.adet }} adet</span>
+                                        <span class="text-success"><i class="fas fa-check-circle"></i> Stokta var</span>
+                                        {% elif stok.adet > 0 %}
+                                        <span class="badge bg-warning stock-badge">{{ stok.adet }} adet</span>
+                                        <span class="text-warning"><i class="fas fa-exclamation-circle"></i> Sınırlı stok</span>
+                                        {% else %}
+                                        <span class="badge bg-danger stock-badge">{{ stok.adet }} adet</span>
+                                        <span class="text-danger"><i class="fas fa-times-circle"></i> Stokta yok</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% elif sehir_secildi %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-search fa-3x mb-3 text-muted"></i>
+                        <h4 class="text-muted">Üzgünüz, arama kriterlerinize uygun sonuç bulunamadı.</h4>
+                        <p class="text-muted">Farklı bir arama terimi deneyebilir veya filtreleri değiştirebilirsiniz.</p>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-box-open fa-4x mb-3 text-muted"></i>
+                        <h4 class="text-muted">Lütfen bir şehir seçin</h4>
+                        <p class="text-muted">Stok bilgilerini görmek için önce bir şehir seçmelisiniz</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="text-center">
+                <p class="mb-0">&copy; 2023 Stok Takip Sistemi. Tüm hakları saklıdır.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Navbar toggle işlevi
+        document.getElementById('navbarToggler').addEventListener('click', function() {
+            document.getElementById('navbarNav').classList.toggle('show');
+        });
+        
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const sehirSelect = document.getElementById('sehir');
+            if (sehirSelect.value) {
+                loadIlceler(sehirSelect.value, '{{ secili_ilce_id }}');
+            }
+        });
+        
+        
+        document.getElementById('sehir').addEventListener('change', function() {
+            const sehirId = this.value;
+            loadIlceler(sehirId, '');
+        });
+        
+        
+        document.getElementById('ilce').addEventListener('change', function() {
+            const sehirId = document.getElementById('sehir').value;
+            const ilceId = this.value;
+            loadMagazalar(sehirId, ilceId, '');
+        });
+        
+       
+        document.getElementById('reset-filters').addEventListener('click', function() {
+            window.location.href = window.location.pathname;
+        });
+        
+        // İlçeleri yükle
+        function loadIlceler(sehirId, selectedIlceId) {
+            const ilceSelect = document.getElementById('ilce');
+            
+            
+            ilceSelect.innerHTML = '<option value="">Tüm İlçeler</option>';
+            
+            if (sehirId) {
+                // AJAX ile sunucudan ilçe verilerini al
+                fetch(`/get_ilceler/?sehir_id=${sehirId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(ilce => {
+                            const option = document.createElement('option');
+                            option.value = ilce.id;
+                            option.textContent = ilce.ilce_adi;
+                            if (selectedIlceId && ilce.id.toString() === selectedIlceId) {
+                                option.selected = true;
+                            }
+                            ilceSelect.appendChild(option);
+                        });
+                        
+                        if (selectedIlceId) {
+                            loadMagazalar(sehirId, selectedIlceId, '{{ secili_magaza_id }}');
+                        }
+                    });
+            }
+        }
+        
+        function loadMagazalar(sehirId, ilceId, selectedMagazaId) {
+            const magazaSelect = document.getElementById('magaza');
+            
+            magazaSelect.innerHTML = '<option value="">Tüm Şubeler</option>';
+            
+            if (sehirId) {
+                
+                let url = `/get_magazalar/?sehir_id=${sehirId}`;
+                if (ilceId) {
+                    url += `&ilce_id=${ilceId}`;
+                }
+                
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(magaza => {
+                            const option = document.createElement('option');
+                            option.value = magaza.id;
+                            option.textContent = magaza.magaza_adi;
+                            if (selectedMagazaId && magaza.id.toString() === selectedMagazaId) {
+                                option.selected = true;
+                            }
+                            magazaSelect.appendChild(option);
+                        });
+                    });
+            }
+        }
+    </script>
+</body>
+</html>
